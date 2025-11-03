@@ -1,5 +1,9 @@
 package main
 
+import (
+	"fmt"
+)
+
 func initialModel() []string {
 	choices := []string{
 		"1) Add contact",
@@ -11,5 +15,11 @@ func initialModel() []string {
 	return choices
 }
 func main() {
+	for i := 0; i < len(initialModel()); i++ {
+		fmt.Print(initialModel()[i] + "\n")
 
+	}
+	for {
+
+	}
 }
