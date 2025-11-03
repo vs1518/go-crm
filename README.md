@@ -36,7 +36,7 @@ L’objectif est de manipuler les **concepts fondamentaux du langage Go** à tra
 ##  Structure du projet
 
 ```
-mini-crm/
+go-crm/
 └── main.go             # Point d'entrée principal du programme
 ```
 
