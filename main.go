@@ -2,11 +2,39 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"os"
+	"strconv"
 )
 
-var contacts map[string]string
+type contact struct {
+	name  string
+	email string
+}
+
+var contacts map[int]contact
+
+var (
+	name  = flag.String("name", "", "Name of the contact")
+	email = flag.String("email", "", "Email of the contact")
+)
+
+func createId() int {
+	// iterate over keys to get the latest id
+	if len(contacts) == 0 {
+		return 1
+	}
+
+	maxId := 0
+	for id := range contacts {
+		if id > maxId {
+			maxId = id
+		}
+	}
+
+	return maxId + 1
+}
 
 func printItems() []string {
 	choices := []string{
@@ -23,6 +51,114 @@ func printItems() []string {
 	return choices
 }
 
+func addContact(reader bufio.Reader) {
+	// prefix string "Enter contact name: "
+	id := createId()
+	fmt.Print("Enter contact name: ")
+	input, _ := reader.ReadString('\n')
+	fmt.Print("Enter contact email: ")
+	email, _ := reader.ReadString('\n')
+	// append to contacts (indexed by name) a new contact with name input and empty string as value
+	contacts[id] = contact{name: input, email: email}
+	fmt.Print("Contact added: " + input + "\n")
+	miniCRM()
+}
+
+func ListContacts(reader bufio.Reader) {
+	for id, contact := range contacts {
+		fmt.Printf("ID: %d, Email: %s, Name: %s\n", id, contact.email, contact.name)
+	}
+	fmt.Print("Return to menu ? (y/n)")
+	input, _ := reader.ReadString('\n')
+	switch {
+	case input == "y\n":
+		miniCRM()
+	default:
+		miniCRM()
+	}
+}
+
+func updateContact(ID int, newName, newEmail string) {
+	if _, exists := contacts[ID]; !exists {
+		fmt.Printf("Contact not found: ID: %d\n", ID)
+		return
+	}
+
+	// Store the old contact info for display
+	oldContact := contacts[ID]
+
+	// Update the contact
+	contacts[ID] = contact{name: newName, email: newEmail}
+
+	fmt.Printf("Contact updated: ID: %d\n", ID)
+	fmt.Printf("Old Name: %sOld Email: %s\n", oldContact.name, oldContact.email)
+	fmt.Printf("New Name: %sNew Email: %s\n", newName, newEmail)
+}
+
+func removeContact(ID int) {
+	// iterate over contacts, find the one with corresponding ID, remove it
+	for id, contact := range contacts {
+		if id == ID {
+			delete(contacts, id)
+			fmt.Printf("Contact removed: ID: %d, Email: %s, Name: %s\n", id, contact.email, contact.name)
+			return
+		}
+	}
+	fmt.Printf("Contact not found: ID: %d\n", ID)
+}
+
+func handleRemoveContact(reader bufio.Reader) {
+	for {
+		fmt.Print("Enter contact ID to remove: ")
+		idInput, _ := reader.ReadString('\n')
+
+		// Remove newline and parse as integer
+		idStr := idInput[:len(idInput)-1]
+		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
+			removeContact(id)
+			break
+		}
+		fmt.Println("Invalid ID. Please enter a positive number.")
+	}
+	miniCRM()
+}
+
+func handleUpdateContact(reader bufio.Reader) {
+	for {
+		fmt.Print("Enter contact ID to update: ")
+		idInput, _ := reader.ReadString('\n')
+
+		// Remove newline and parse as integer
+		idStr := idInput[:len(idInput)-1]
+		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
+			// Check if contact exists
+			if _, exists := contacts[id]; !exists {
+				fmt.Printf("Contact not found: ID: %d\n", id)
+				continue
+			}
+
+			// Display current contact info
+			currentContact := contacts[id]
+			fmt.Printf("Current contact:\n")
+			fmt.Printf("ID: %d\n", id)
+			fmt.Printf("Name: %s", currentContact.name)
+			fmt.Printf("Email: %s", currentContact.email)
+
+			// Ask for new information
+			fmt.Print("Enter new contact name: ")
+			newName, _ := reader.ReadString('\n')
+			fmt.Print("Enter new contact email: ")
+			newEmail, _ := reader.ReadString('\n')
+
+			// Update the contact
+			updateContact(id, newName, newEmail)
+			break
+		}
+		fmt.Println("Invalid ID. Please enter a positive number.")
+	}
+	miniCRM()
+}
+
 func miniCRM() {
 	printItems()
 	reader := bufio.NewReader(os.Stdin)
@@ -37,19 +173,41 @@ func miniCRM() {
 		input, _ = reader.ReadString('\n')
 	}
 
-	if input == "1\n" {
-		// prefix string "Enter contact name: "
-		fmt.Print("Enter contact name: ")
-		input, _ := reader.ReadString('\n')
-		fmt.Print("name :", input)
-		miniCRM()
-	}
-	// Function to make program persistent
-	for {
-
+	switch {
+	case input == "1\n":
+		{
+			addContact(*reader)
+		}
+	case input == "2\n":
+		{
+			ListContacts(*reader)
+		}
+	case input == "3\n":
+		{
+			handleRemoveContact(*reader)
+		}
+	case input == "4\n":
+		{
+			handleUpdateContact(*reader)
+		}
+	case input == "5\n":
+		{
+			fmt.Println("Goodbye!")
+			os.Exit(0)
+		}
 	}
 }
 
 func main() {
+	contacts = make(map[int]contact)
+	flag.Parse()
+	name := *name
+	email := *email
+	if name != "" && email != "" {
+		contacts[1] = contact{
+			name:  name,
+			email: email,
+		}
+	}
 	miniCRM()
 }
