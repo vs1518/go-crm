@@ -71,7 +71,7 @@ Le menu s’affiche :
 ### 3️⃣ Ajouter via les flags (mode rapide)
 
 ```bash
-go run main.go --add --id=1 --name="Alice" --email="alice@efrei.fr"
+go run main.go --add --id=1 --name="arno" --email="arno@gmail.com"
 ```
 
 Résultat :
@@ -93,8 +93,8 @@ Contact added via flags ✅
 5) Quitter
 Choix: 1
 ID (entier > 0): 1
-Nom: Alice
-Email: alice@efrei.fr
+Nom: arno
+Email: arno@gmail.com
 ✅ Contact ajouté.
 ```
 
