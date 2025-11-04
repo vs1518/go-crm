@@ -5,7 +5,9 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"regexp"
 	"strconv"
+	"strings"
 )
 
 type contact struct {
@@ -20,6 +22,22 @@ var (
 	name  = flag.String("name", "", "Name of the contact")
 	email = flag.String("email", "", "Email of the contact")
 )
+
+func newContact(contact *contact) {
+	if contact.name == "" || contact.email == "" {
+		fmt.Print("Incorrect: name or email cannot be empty\n")
+		miniCRM()
+	}
+	
+	// Validate email format with regex
+	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	if !emailRegex.MatchString(contact.email) {
+		fmt.Print("Incorrect: invalid email format\n")
+		miniCRM()
+	}
+	
+	fmt.Print("Contact created successfully\n")
+}
 
 func createId() int {
 	// iterate over keys to get the latest id
@@ -57,11 +75,15 @@ func addContact(reader bufio.Reader) {
 	id := createId()
 	fmt.Print("Enter contact name: ")
 	input, _ := reader.ReadString('\n')
+	input = strings.TrimSpace(input)
 	fmt.Print("Enter contact email: ")
 	email, _ := reader.ReadString('\n')
+	email = strings.TrimSpace(email)
 	// append to contacts (indexed by name) a new contact with name input and empty string as value
-	contacts[id] = &contact{ID: id, name: input, email: email}
-	fmt.Print("Contact added: " + input + "\n")
+	contact := &contact{ID: id, name: input, email: email}
+	newContact(contact)
+	contacts[id] = contact
+	fmt.Print("Contact added: " + contact.name + "\n")
 	miniCRM()
 }
 
@@ -150,8 +172,10 @@ func handleUpdateContact(reader bufio.Reader) {
 			// Ask for new information
 			fmt.Print("Enter new contact name: ")
 			newName, _ := reader.ReadString('\n')
+			newName = strings.TrimSpace(newName)
 			fmt.Print("Enter new contact email: ")
 			newEmail, _ := reader.ReadString('\n')
+			newEmail = strings.TrimSpace(newEmail)
 
 			// Update the contact
 			updateContact(id, newName, newEmail)
@@ -204,8 +228,8 @@ func miniCRM() {
 func main() {
 	contacts = make(map[int]*contact)
 	flag.Parse()
-	name := *name
-	email := *email
+	name := strings.TrimSpace(*name)
+	email := strings.TrimSpace(*email)
 	if name != "" && email != "" {
 		contacts[1] = &contact{
 			ID:    1,
