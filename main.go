@@ -9,6 +9,7 @@ import (
 )
 
 type contact struct {
+	ID    int
 	name  string
 	email string
 }
@@ -27,9 +28,9 @@ func createId() int {
 	}
 
 	maxId := 0
-	for id := range contacts {
-		if id > maxId {
-			maxId = id
+	for _, contact := range contacts {
+		if contact.ID > maxId {
+			maxId = contact.ID
 		}
 	}
 
@@ -59,14 +60,14 @@ func addContact(reader bufio.Reader) {
 	fmt.Print("Enter contact email: ")
 	email, _ := reader.ReadString('\n')
 	// append to contacts (indexed by name) a new contact with name input and empty string as value
-	contacts[id] = &contact{name: input, email: email}
+	contacts[id] = &contact{ID: id, name: input, email: email}
 	fmt.Print("Contact added: " + input + "\n")
 	miniCRM()
 }
 
 func ListContacts(reader bufio.Reader) {
-	for id, contact := range contacts {
-		fmt.Printf("ID: %d, Email: %s, Name: %s\n", id, contact.email, contact.name)
+	for _, contact := range contacts {
+		fmt.Printf("ID: %d, Email: %s, Name: %s\n", contact.ID, contact.email, contact.name)
 	}
 	fmt.Print("Return to menu ? (y/n)")
 	input, _ := reader.ReadString('\n')
@@ -79,32 +80,34 @@ func ListContacts(reader bufio.Reader) {
 }
 
 func updateContact(ID int, newName, newEmail string) {
-	if _, exists := contacts[ID]; !exists {
+	contact, exists := contacts[ID]
+	if !exists {
 		fmt.Printf("Contact not found: ID: %d\n", ID)
 		return
 	}
 
 	// Store the old contact info for display
-	oldContact := contacts[ID]
+	oldName := contact.name
+	oldEmail := contact.email
 
 	// Update the contact
-	contacts[ID] = &contact{name: newName, email: newEmail}
+	contact.name = newName
+	contact.email = newEmail
 
-	fmt.Printf("Contact updated: ID: %d\n", ID)
-	fmt.Printf("Old Name: %sOld Email: %s\n", oldContact.name, oldContact.email)
+	fmt.Printf("Contact updated: ID: %d\n", contact.ID)
+	fmt.Printf("Old Name: %sOld Email: %s\n", oldName, oldEmail)
 	fmt.Printf("New Name: %sNew Email: %s\n", newName, newEmail)
 }
 
 func removeContact(ID int) {
 	// iterate over contacts, find the one with corresponding ID, remove it
-	for id, contact := range contacts {
-		if id == ID {
-			delete(contacts, id)
-			fmt.Printf("Contact removed: ID: %d, Email: %s, Name: %s\n", id, contact.email, contact.name)
-			return
-		}
+	contact, exists := contacts[ID]
+	if !exists {
+		fmt.Printf("Contact not found: ID: %d\n", ID)
+		return
 	}
-	fmt.Printf("Contact not found: ID: %d\n", ID)
+	delete(contacts, ID)
+	fmt.Printf("Contact removed: ID: %d, Email: %s, Name: %s\n", contact.ID, contact.email, contact.name)
 }
 
 func handleRemoveContact(reader bufio.Reader) {
@@ -140,7 +143,7 @@ func handleUpdateContact(reader bufio.Reader) {
 			// Display current contact info
 			currentContact := contacts[id]
 			fmt.Printf("Current contact:\n")
-			fmt.Printf("ID: %d\n", id)
+			fmt.Printf("ID: %d\n", currentContact.ID)
 			fmt.Printf("Name: %s", currentContact.name)
 			fmt.Printf("Email: %s", currentContact.email)
 
@@ -205,6 +208,7 @@ func main() {
 	email := *email
 	if name != "" && email != "" {
 		contacts[1] = &contact{
+			ID:    1,
 			name:  name,
 			email: email,
 		}
