@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 )
+
 type contact struct {
 	ID    int
 	name  string
@@ -52,7 +53,7 @@ func (store MemoryStore) renderOne(id int) error {
 func (store MemoryStore) delete(id int) error {
 	_, exists := store.contacts[id]
 	if !exists {
-		return fmt.Errorf("contact not found")
+		return fmt.Errorf("contact not found with ID: %d", id)
 	}
 	delete(store.contacts, id)
 	return nil
