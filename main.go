@@ -1,5 +1,5 @@
 package main
-
+	
 import (
 	"bufio"
 	"flag"
@@ -10,49 +10,27 @@ import (
 	"strings"
 )
 
-type contact struct {
-	ID    int
-	name  string
-	email string
-}
-
-var contacts map[int]*contact
-
 var (
-	name  = flag.String("name", "", "Name of the contact")
-	email = flag.String("email", "", "Email of the contact")
+	name    = flag.String("name", "", "Name of the contact")
+	email   = flag.String("email", "", "Email of the contact")
+	store   MemoryStore
+	nextid = 0
 )
 
-func newContact(contact *contact) {
+func contactvalidation(contact *contact) {
 	if contact.name == "" || contact.email == "" {
 		fmt.Print("Incorrect: name or email cannot be empty\n")
-		miniCRM()
+		return
 	}
 	
 	// Validate email format with regex
 	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 	if !emailRegex.MatchString(contact.email) {
 		fmt.Print("Incorrect: invalid email format\n")
-		miniCRM()
+		return
 	}
 	
 	fmt.Print("Contact created successfully\n")
-}
-
-func createId() int {
-	// iterate over keys to get the latest id
-	if len(contacts) == 0 {
-		return 1
-	}
-
-	maxId := 0
-	for _, contact := range contacts {
-		if contact.ID > maxId {
-			maxId = contact.ID
-		}
-	}
-
-	return maxId + 1
 }
 
 func printItems() []string {
@@ -72,7 +50,9 @@ func printItems() []string {
 
 func addContact(reader bufio.Reader) {
 	// prefix string "Enter contact name: "
-	id := createId()
+	id := nextid + 1
+	nextid = id
+	fmt.Print(id)
 	fmt.Print("Enter contact name: ")
 	input, _ := reader.ReadString('\n')
 	input = strings.TrimSpace(input)
@@ -81,10 +61,11 @@ func addContact(reader bufio.Reader) {
 	email = strings.TrimSpace(email)
 	// append to contacts (indexed by name) a new contact with name input and empty string as value
 	contact := &contact{ID: id, name: input, email: email}
-	newContact(contact)
+	contactvalidation(contact)
 	contacts[id] = contact
+	store.save(contact)
 	fmt.Print("Contact added: " + contact.name + "\n")
-	miniCRM()
+	return
 }
 
 func ListContacts(reader bufio.Reader) {
@@ -95,11 +76,8 @@ func ListContacts(reader bufio.Reader) {
 	input, _ := reader.ReadString('\n')
 	switch {
 	case input == "y\n":
-		miniCRM()
-	default:
-		miniCRM()
-	}
-}
+		return
+}}
 
 func updateContact(ID int, newName, newEmail string) {
 	contact, exists := contacts[ID]
@@ -145,7 +123,7 @@ func handleRemoveContact(reader bufio.Reader) {
 		}
 		fmt.Println("Invalid ID. Please enter a positive number.")
 	}
-	miniCRM()
+	return
 }
 
 func handleUpdateContact(reader bufio.Reader) {
@@ -183,10 +161,10 @@ func handleUpdateContact(reader bufio.Reader) {
 		}
 		fmt.Println("Invalid ID. Please enter a positive number.")
 	}
-	miniCRM()
+	return
 }
 
-func miniCRM() {
+func core() {
 	printItems()
 	reader := bufio.NewReader(os.Stdin)
 	input, _ := reader.ReadString('\n')
@@ -226,7 +204,7 @@ func miniCRM() {
 }
 
 func main() {
-	contacts = make(map[int]*contact)
+	nextid = 1
 	flag.Parse()
 	name := strings.TrimSpace(*name)
 	email := strings.TrimSpace(*email)
@@ -237,5 +215,5 @@ func main() {
 			email: email,
 		}
 	}
-	miniCRM()
+	core()
 }
