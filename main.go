@@ -1,13 +1,14 @@
 package main
-	
+
 import (
 	"bufio"
 	"flag"
 	"fmt"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
+	"errors"
+	"strconv"
 )
 
 var (
@@ -17,21 +18,20 @@ var (
 	nextid = 0
 )
 
-func contactvalidation(contact *contact) {
+func validateContact(contact *contact) error {
 	if contact.name == "" || contact.email == "" {
-		fmt.Print("Incorrect: name or email cannot be empty\n")
-		return
+		return errors.New("name and email cannot be empty")
 	}
 	
 	// Validate email format with regex
 	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 	if !emailRegex.MatchString(contact.email) {
-		fmt.Print("Incorrect: invalid email format\n")
-		return
+		return errors.New("invalid email format")
 	}
 	
-	fmt.Print("Contact created successfully\n")
+	return nil
 }
+
 
 func printItems() []string {
 	choices := []string{
@@ -52,117 +52,118 @@ func addContact(reader bufio.Reader) {
 	// prefix string "Enter contact name: "
 	id := nextid + 1
 	nextid = id
-	fmt.Print(id)
-	fmt.Print("Enter contact name: ")
+	fmt.Print("\n"+"Enter contact name: ")
 	input, _ := reader.ReadString('\n')
 	input = strings.TrimSpace(input)
 	fmt.Print("Enter contact email: ")
 	email, _ := reader.ReadString('\n')
 	email = strings.TrimSpace(email)
-	// append to contacts (indexed by name) a new contact with name input and empty string as value
-	contact := &contact{ID: id, name: input, email: email}
-	contactvalidation(contact)
-	contacts[id] = contact
+	contact := &contact{ID:    id,
+		name:  input,
+		email: email,}
 	store.save(contact)
-	fmt.Print("Contact added: " + contact.name + "\n")
-	return
+	if err := validateContact(contact); err != nil {
+		fmt.Printf("Validation failed: %s\n", err.Error())
+		core()
+	}
+	fmt.Print("Contact added: " + contact.name + " with ID: " + strconv.Itoa(contact.ID) + "\n")
+	core()
 }
 
 func ListContacts(reader bufio.Reader) {
-	for _, contact := range contacts {
-		fmt.Printf("ID: %d, Email: %s, Name: %s\n", contact.ID, contact.email, contact.name)
-	}
-	fmt.Print("Return to menu ? (y/n)")
+	// display all contacts in store memory with ID, email and name in table format
+	store.render()
+	fmt.Println("Press enter to return to menu...")
 	input, _ := reader.ReadString('\n')
-	switch {
-	case input == "y\n":
-		return
-}}
-
-func updateContact(ID int, newName, newEmail string) {
-	contact, exists := contacts[ID]
-	if !exists {
-		fmt.Printf("Contact not found: ID: %d\n", ID)
-		return
+	if input == "\n" {
+		core()
 	}
-
-	// Store the old contact info for display
-	oldName := contact.name
-	oldEmail := contact.email
-
-	// Update the contact
-	contact.name = newName
-	contact.email = newEmail
-
-	fmt.Printf("Contact updated: ID: %d\n", contact.ID)
-	fmt.Printf("Old Name: %sOld Email: %s\n", oldName, oldEmail)
-	fmt.Printf("New Name: %sNew Email: %s\n", newName, newEmail)
 }
 
-func removeContact(ID int) {
-	// iterate over contacts, find the one with corresponding ID, remove it
-	contact, exists := contacts[ID]
-	if !exists {
-		fmt.Printf("Contact not found: ID: %d\n", ID)
-		return
-	}
-	delete(contacts, ID)
-	fmt.Printf("Contact removed: ID: %d, Email: %s, Name: %s\n", contact.ID, contact.email, contact.name)
-}
+// func updateContact(ID int, newName, newEmail string) {
+// 	contact, exists := contacts[ID]
+// 	if !exists {
+// 		fmt.Printf("Contact not found: ID: %d\n", ID)
+// 		return
+// 	}
 
-func handleRemoveContact(reader bufio.Reader) {
-	for {
-		fmt.Print("Enter contact ID to remove: ")
-		idInput, _ := reader.ReadString('\n')
+// 	// Store the old contact info for display
+// 	oldName := contact.name
+// 	oldEmail := contact.email
 
-		// Remove newline and parse as integer
-		idStr := idInput[:len(idInput)-1]
-		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
-			removeContact(id)
-			break
-		}
-		fmt.Println("Invalid ID. Please enter a positive number.")
-	}
-	return
-}
+// 	// Update the contact
+// 	contact.name = newName
+// 	contact.email = newEmail
 
-func handleUpdateContact(reader bufio.Reader) {
-	for {
-		fmt.Print("Enter contact ID to update: ")
-		idInput, _ := reader.ReadString('\n')
+// 	fmt.Printf("Contact updated: ID: %d\n", contact.ID)
+// 	fmt.Printf("Old Name: %sOld Email: %s\n", oldName, oldEmail)
+// 	fmt.Printf("New Name: %sNew Email: %s\n", newName, newEmail)
+// }
 
-		// Remove newline and parse as integer
-		idStr := idInput[:len(idInput)-1]
-		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
-			// Check if contact exists
-			if _, exists := contacts[id]; !exists {
-				fmt.Printf("Contact not found: ID: %d\n", id)
-				continue
-			}
+// func removeContact(ID int) {
+// 	// iterate over contacts, find the one with corresponding ID, remove it
+// 	contact, exists := contacts[ID]
+// 	if !exists {
+// 		fmt.Printf("Contact not found: ID: %d\n", ID)
+// 		return
+// 	}
+// 	delete(contacts, ID)
+// 	fmt.Printf("Contact removed: ID: %d, Email: %s, Name: %s\n", contact.ID, contact.email, contact.name)
+// }
 
-			// Display current contact info
-			currentContact := contacts[id]
-			fmt.Printf("Current contact:\n")
-			fmt.Printf("ID: %d\n", currentContact.ID)
-			fmt.Printf("Name: %s", currentContact.name)
-			fmt.Printf("Email: %s", currentContact.email)
+// func handleRemoveContact(reader bufio.Reader) {
+// 	for {
+// 		fmt.Print("Enter contact ID to remove: ")
+// 		idInput, _ := reader.ReadString('\n')
 
-			// Ask for new information
-			fmt.Print("Enter new contact name: ")
-			newName, _ := reader.ReadString('\n')
-			newName = strings.TrimSpace(newName)
-			fmt.Print("Enter new contact email: ")
-			newEmail, _ := reader.ReadString('\n')
-			newEmail = strings.TrimSpace(newEmail)
+// 		// Remove newline and parse as integer
+// 		idStr := idInput[:len(idInput)-1]
+// 		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
+// 			removeContact(id)
+// 			break
+// 		}
+// 		fmt.Println("Invalid ID. Please enter a positive number.")
+// 	}
+// 	return
+// }
 
-			// Update the contact
-			updateContact(id, newName, newEmail)
-			break
-		}
-		fmt.Println("Invalid ID. Please enter a positive number.")
-	}
-	return
-}
+// func handleUpdateContact(reader bufio.Reader) {
+// 	for {
+// 		fmt.Print("Enter contact ID to update: ")
+// 		idInput, _ := reader.ReadString('\n')
+
+// 		// Remove newline and parse as integer
+// 		idStr := idInput[:len(idInput)-1]
+// 		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
+// 			// Check if contact exists
+// 			if _, exists := contacts[id]; !exists {
+// 				fmt.Printf("Contact not found: ID: %d\n", id)
+// 				continue
+// 			}
+
+// 			// Display current contact info
+// 			currentContact := contacts[id]
+// 			fmt.Printf("Current contact:\n")
+// 			fmt.Printf("ID: %d\n", currentContact.ID)
+// 			fmt.Printf("Name: %s", currentContact.name)
+// 			fmt.Printf("Email: %s", currentContact.email)
+
+// 			// Ask for new information
+// 			fmt.Print("Enter new contact name: ")
+// 			newName, _ := reader.ReadString('\n')
+// 			newName = strings.TrimSpace(newName)
+// 			fmt.Print("Enter new contact email: ")
+// 			newEmail, _ := reader.ReadString('\n')
+// 			newEmail = strings.TrimSpace(newEmail)
+
+// 			// Update the contact
+// 			updateContact(id, newName, newEmail)
+// 			break
+// 		}
+// 		fmt.Println("Invalid ID. Please enter a positive number.")
+// 	}
+// 	return
+// }
 
 func core() {
 	printItems()
@@ -187,14 +188,14 @@ func core() {
 		{
 			ListContacts(*reader)
 		}
-	case input == "3\n":
-		{
-			handleRemoveContact(*reader)
-		}
-	case input == "4\n":
-		{
-			handleUpdateContact(*reader)
-		}
+	// case input == "3\n":
+	// 	{
+	// 		handleRemoveContact(*reader)
+	// 	}
+	// case input == "4\n":
+	// 	{
+	// 		handleUpdateContact(*reader)
+	// 	}
 	case input == "5\n":
 		{
 			fmt.Println("Goodbye!")
@@ -204,16 +205,10 @@ func core() {
 }
 
 func main() {
-	nextid = 1
 	flag.Parse()
-	name := strings.TrimSpace(*name)
-	email := strings.TrimSpace(*email)
-	if name != "" && email != "" {
-		contacts[1] = &contact{
-			ID:    1,
-			name:  name,
-			email: email,
-		}
-	}
+	store.contacts = make(map[int]*contact) 
+	// name := strings.TrimSpace(*name)
+	// email := strings.TrimSpace(*email)
+	// TODO : Initialiser memory avec les args si ils sont donnés
 	core()
 }
