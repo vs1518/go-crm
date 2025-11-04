@@ -13,7 +13,7 @@ type contact struct {
 	email string
 }
 
-var contacts map[int]contact
+var contacts map[int]*contact
 
 var (
 	name  = flag.String("name", "", "Name of the contact")
@@ -59,7 +59,7 @@ func addContact(reader bufio.Reader) {
 	fmt.Print("Enter contact email: ")
 	email, _ := reader.ReadString('\n')
 	// append to contacts (indexed by name) a new contact with name input and empty string as value
-	contacts[id] = contact{name: input, email: email}
+	contacts[id] = &contact{name: input, email: email}
 	fmt.Print("Contact added: " + input + "\n")
 	miniCRM()
 }
@@ -88,7 +88,7 @@ func updateContact(ID int, newName, newEmail string) {
 	oldContact := contacts[ID]
 
 	// Update the contact
-	contacts[ID] = contact{name: newName, email: newEmail}
+	contacts[ID] = &contact{name: newName, email: newEmail}
 
 	fmt.Printf("Contact updated: ID: %d\n", ID)
 	fmt.Printf("Old Name: %sOld Email: %s\n", oldContact.name, oldContact.email)
@@ -199,12 +199,12 @@ func miniCRM() {
 }
 
 func main() {
-	contacts = make(map[int]contact)
+	contacts = make(map[int]*contact)
 	flag.Parse()
 	name := *name
 	email := *email
 	if name != "" && email != "" {
-		contacts[1] = contact{
+		contacts[1] = &contact{
 			name:  name,
 			email: email,
 		}
