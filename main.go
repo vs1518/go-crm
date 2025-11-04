@@ -14,7 +14,6 @@ import (
 var (
 	name   = flag.String("name", "", "Name of the contact")
 	email  = flag.String("email", "", "Email of the contact")
-	store  MemoryStore
 	nextid = 0
 )
 
@@ -47,7 +46,7 @@ func printItems() []string {
 	return choices
 }
 
-func addContact(reader bufio.Reader) {
+func addContact(reader bufio.Reader, store storer) {
 	// prefix string "Enter contact name: "
 	id := nextid + 1
 	nextid = id
@@ -63,23 +62,23 @@ func addContact(reader bufio.Reader) {
 	store.save(contact)
 	if err := validateContact(contact); err != nil {
 		fmt.Printf("Validation failed: %s\n", err.Error())
-		core()
+		core(store)
 	}
 	fmt.Print("Contact added: " + contact.name + " with ID: " + strconv.Itoa(contact.ID) + "\n")
-	core()
+	core(store)
 }
 
-func ListContacts(reader bufio.Reader) {
+func ListContacts(reader bufio.Reader, store storer) {
 	// display all contacts in store memory with ID, email and name in table format
 	store.render()
 	fmt.Println("Press enter to return to menu...")
 	input, _ := reader.ReadString('\n')
 	if input == "\n" {
-		core()
+		core(store)
 	}
 }
 
-func handleRemoveContact(reader bufio.Reader) {
+func handleRemoveContact(reader bufio.Reader, store storer) {
 	for {
 		fmt.Print("Enter contact ID to remove: ")
 		idInput, _ := reader.ReadString('\n')
@@ -96,12 +95,12 @@ func handleRemoveContact(reader bufio.Reader) {
 				continue
 			}
 			fmt.Println("Contact deleted successfully")
-			core()
+			core(store)
 		}
 	}
 }
 
-func handleUpdateContact(reader bufio.Reader) {
+func handleUpdateContact(reader bufio.Reader, store storer) {
 	for {
 		fmt.Print("Enter contact ID to update: ")
 		idInput, _ := reader.ReadString('\n')
@@ -109,18 +108,12 @@ func handleUpdateContact(reader bufio.Reader) {
 		// Remove newline and parse as integer
 		idStr := idInput[:len(idInput)-1]
 		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
-			// Check if contact exists
-			if _, exists := store.contacts[id]; !exists {
+			// Check if contact exists and display current contact info
+			fmt.Printf("Current contact:\n")
+			if err := store.renderOne(id); err != nil {
 				fmt.Printf("Contact not found: ID: %d\n", id)
 				continue
 			}
-
-			// Display current contact info
-			currentContact := store.contacts[id]
-			fmt.Printf("Current contact:\n")
-			fmt.Printf("ID: %d\n", currentContact.ID)
-			fmt.Printf("Name: %s\n", currentContact.name)
-			fmt.Printf("Email: %s\n", currentContact.email)
 
 			// Ask for new information
 			fmt.Print("Enter new contact name: ")
@@ -139,10 +132,10 @@ func handleUpdateContact(reader bufio.Reader) {
 		}
 		fmt.Println("Invalid ID. Please enter a positive number.")
 	}
-	core()
+	core(store)
 }
 
-func core() {
+func core(store storer) {
 	printItems()
 	reader := bufio.NewReader(os.Stdin)
 	input, _ := reader.ReadString('\n')
@@ -159,19 +152,19 @@ func core() {
 	switch {
 	case input == "1\n":
 		{
-			addContact(*reader)
+			addContact(*reader, store)
 		}
 	case input == "2\n":
 		{
-			ListContacts(*reader)
+			ListContacts(*reader, store)
 		}
 	case input == "3\n":
 		{
-			handleRemoveContact(*reader)
+			handleRemoveContact(*reader, store)
 		}
 	case input == "4\n":
 		{
-			handleUpdateContact(*reader)
+			handleUpdateContact(*reader, store)
 		}
 	case input == "5\n":
 		{
@@ -183,7 +176,9 @@ func core() {
 
 func main() {
 	flag.Parse()
-	store.contacts = make(map[int]*contact)
+	store := &MemoryStore{
+		contacts: make(map[int]*contact),
+	}
 	name := strings.TrimSpace(*name)
 	email := strings.TrimSpace(*email)
 	if name != "" && email != "" {
@@ -195,5 +190,5 @@ func main() {
 		}
 		store.save(contact)
 	}
-	core()
+	core(store)
 }
