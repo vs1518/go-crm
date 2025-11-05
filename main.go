@@ -59,11 +59,11 @@ func addContact(reader bufio.Reader, store storer) {
 	contact := &contact{ID: id,
 		name:  input,
 		email: email}
-	store.save(contact)
 	if err := validateContact(contact); err != nil {
 		fmt.Printf("Validation failed: %s\n", err.Error())
 		core(store)
 	}
+	store.save(contact)
 	fmt.Print("Contact added: " + contact.name + " with ID: " + strconv.Itoa(contact.ID) + "\n")
 	core(store)
 }
