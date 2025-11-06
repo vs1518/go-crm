@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"minicrm/cmd"
 	"os"
 	"regexp"
 	"strconv"
@@ -175,20 +176,21 @@ func core(store storer) {
 }
 
 func main() {
-	flag.Parse()
-	store := &MemoryStore{
-		contacts: make(map[int]*contact),
-	}
-	name := strings.TrimSpace(*name)
-	email := strings.TrimSpace(*email)
-	if name != "" && email != "" {
-		id := nextid + 1
-		nextid = id
-		contact := &contact{ID: id,
-			name:  name,
-			email: email,
-		}
-		store.save(contact)
-	}
-	core(store)
+	cmd.Execute()
+	// flag.Parse()
+	// store := &MemoryStore{
+	// 	contacts: make(map[int]*contact),
+	// }
+	// name := strings.TrimSpace(*name)
+	// email := strings.TrimSpace(*email)
+	// if name != "" && email != "" {
+	// 	id := nextid + 1
+	// 	nextid = id
+	// 	contact := &contact{ID: id,
+	// 		name:  name,
+	// 		email: email,
+	// 	}
+	// 	store.save(contact)
+	// }
+	// core(store)
 }
